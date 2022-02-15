@@ -1,0 +1,10 @@
+First Terminal
+roslaunch from2dto3d from2to3.launch
+
+Second terminal
+rosrun from2dto3d matt_state_machine.py
+
+Third terminal - (to run SMACH viewer)
+rosrun smach_viewer smach_viewer.py
+
+
