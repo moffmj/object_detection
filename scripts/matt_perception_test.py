@@ -147,7 +147,7 @@ class navigateToBinClass(smach.State):
 	def execute(self, userdata):
 
 		# TODO - ENTER COORDINATES OF BIN AND RELEASE OBJECT
-		move_base_global.runMoveBase(0,0)
+		move_base_global.runMoveBase(7.5,-1)
 
 		self.play_m_as = SimpleActionClient('/play_motion', PlayMotionAction)
 		if not self.play_m_as.wait_for_server(rospy.Duration(20)):

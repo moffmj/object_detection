@@ -255,7 +255,7 @@ bool From2Dto3D::processObject(std_srvs::EmptyRequest &req, std_srvs::EmptyRespo
     for (int n=0;n<box_number;n++)
     {
         ROS_WARN_STREAM(__LINE__);
-        if (object == box[n].name)
+        if ((box[n].name == object) || (box[n].name == "person") || (box[n].name == "toothbrush") || (box[n].name == "traffic light"))
         {
             ROS_INFO("find the object!");
             x = (box[n].a + box[n].b)/2 ;
