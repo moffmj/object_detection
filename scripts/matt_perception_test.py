@@ -122,7 +122,7 @@ class navClass(smach.State):
 
 class pickClass(smach.State):
 	def __init__(self):
-		smach.State.__init__(self, outcomes=['Picked'])
+		smach.State.__init__(self, outcomes=['Picked','Failed'])
 
 	def pick_client(self):
 		rospy.wait_for_service('pick_gui')
@@ -138,8 +138,14 @@ class pickClass(smach.State):
 
 	def execute(self, userdata):
 		print("Starting pick client")
-		self.pick_client()
-        	return 'Picked'
+		result = self.pick_client()
+		if result.success = True:
+			print("SUCCEEDED PICK")
+			return 'Picked'
+		else:
+			print("RETRY")
+			return 'Failed'
+        	
 
 
 

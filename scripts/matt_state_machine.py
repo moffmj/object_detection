@@ -18,7 +18,9 @@ def main():
                                transitions={'FoundObjectTransition': 'TravelState'}, remapping={'xco_out':'sm_data_x','yco_out':'sm_data_y',})
 
         smach.StateMachine.add('TravelState', ps.navClass(), transitions={'Navigated': 'PickState'}, remapping={'xco_in':'sm_data_x','yco_in':'sm_data_y'})
-	smach.StateMachine.add('PickState', ps.pickClass(), transitions={'Picked': 'NavToBinState'})
+
+	smach.StateMachine.add('PickState', ps.pickClass(), transitions={'Picked': 'NavToBinState','Failed':'PickState'})
+
 	smach.StateMachine.add('NavToBinState', ps.navigateToBinClass(), transitions={'ReachedBin': 'mission_complete'})
 
     sis = smach_ros.IntrospectionServer('my_smach_introspection_server', sm, '/SM_ROOT')
