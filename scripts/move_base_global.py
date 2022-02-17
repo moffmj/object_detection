@@ -25,6 +25,7 @@ def movebase_client(x,y):
    # Move 0.5 meters forward along the y axis of the "map" coordinate frame 
     goal.target_pose.pose.position.y = y#-0.00889953412116
     goal.target_pose.pose.position.z = 0#-0.00889953412116
+    goal.target_pose.pose.orientation.z=-1
 
    # No rotation of the mobile base frame w.r.t. map frame
     goal.target_pose.pose.orientation.w = 1.0

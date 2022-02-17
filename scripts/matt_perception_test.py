@@ -19,6 +19,8 @@ import quat_to_euler
 import move_base_global
 from play_motion_msgs.msg import PlayMotionAction, PlayMotionGoal
 from actionlib import SimpleActionClient
+from multiprocessing import Process
+import sys
 
 
 print("Hello World!")
@@ -57,21 +59,40 @@ class matt_test_class(smach.State):
         	self.done_class_point.done = True
         	print('received done point')
 
+	def scan(self):
+		i= 0
+		while i<100:
+			self.point_3d_client()
+			print('Checking')
+			if self.done_class_point.done:
+				print("Found class")
+                		self.done_class_point.done = False
+                		return True
+                	i += 1
+                return False
+		
+
 	def execute(self,userdata):
 
 		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         	roslaunch.configure_logging(uuid)
         	self.launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/tiago_public_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch"])
 		print("EXECUTING")
+		
+		points = [[7,0],[2,0]]
+		index = 0
 		while True:
-			#print("Checking")
-            		self.point_3d_client()
-			#print("Finished point3d client")
-			#print(self.done_class_point.done)
-            		if self.done_class_point.done:
-				print("Found class")
-                		self.done_class_point.done = False
-                		break
+			if self.scan():
+				break
+			else:
+				if index > len(points)-1:
+					index = 0
+				locations = points[index]
+				move_base_global.runMoveBase(locations[0],locations[1])
+				index += 1
+					
+	
+  
         	self.launch.shutdown()
 
         	#self.saysomething_client("i got the 3-D point of the object, starting grasping")
@@ -132,6 +153,7 @@ class pickClass(smach.State):
 			trigRequest = TriggerRequest()
             		res = pickUp(trigRequest)
 			print(res)
+			return res
 			#print("Finished trying")
         	except rospy.ServiceException, e:
             		print "Service call failed: %s" % e
@@ -139,7 +161,7 @@ class pickClass(smach.State):
 	def execute(self, userdata):
 		print("Starting pick client")
 		result = self.pick_client()
-		if result.success = True:
+		if result.success == True:
 			print("SUCCEEDED PICK")
 			return 'Picked'
 		else:
@@ -156,7 +178,7 @@ class navigateToBinClass(smach.State):
 	def execute(self, userdata):
 
 		# TODO - ENTER COORDINATES OF BIN AND RELEASE OBJECT
-		move_base_global.runMoveBase(7.5,-1)
+		move_base_global.runMoveBase(7,0)
 
 		self.play_m_as = SimpleActionClient('/play_motion', PlayMotionAction)
 		if not self.play_m_as.wait_for_server(rospy.Duration(20)):
@@ -165,7 +187,7 @@ class navigateToBinClass(smach.State):
 		rospy.loginfo("Connected!")
 
 		pmg = PlayMotionGoal()
-               	pmg.motion_name = 'offer'#'pick_final_pose'
+               	pmg.motion_name = 'pregrasp_weight'#'pick_final_pose'
 		pmg.skip_planning = False
 		self.play_m_as.send_goal_and_wait(pmg)
 
