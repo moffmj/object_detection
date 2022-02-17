@@ -6,7 +6,7 @@ import smach
 import numpy as np
 import smach_ros
 import time
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, Trigger, TriggerRequest
 from final_msg_srv.srv import *
 from final_msg_srv.msg import *
 from std_msgs.msg import String
@@ -19,6 +19,7 @@ import quat_to_euler
 import move_base_global
 from play_motion_msgs.msg import PlayMotionAction, PlayMotionGoal
 from actionlib import SimpleActionClient
+
 
 print("Hello World!")
 
@@ -127,8 +128,10 @@ class pickClass(smach.State):
 		rospy.wait_for_service('pick_gui')
 		try:
 			print("Trying pick client")
-            		pickUp = rospy.ServiceProxy('pick_gui', Empty)
-            		pickUp()
+            		pickUp = rospy.ServiceProxy('pick_gui', Trigger)
+			trigRequest = TriggerRequest()
+            		res = pickUp(trigRequest)
+			print(res)
 			#print("Finished trying")
         	except rospy.ServiceException, e:
             		print "Service call failed: %s" % e
