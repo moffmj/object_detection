@@ -21,7 +21,7 @@ def main():
 
 	smach.StateMachine.add('PickState', ps.pickClass(), transitions={'Picked': 'NavToBinState','Failed':'PickState'})
 
-	smach.StateMachine.add('NavToBinState', ps.navigateToBinClass(), transitions={'ReachedBin': 'mission_complete'})
+	smach.StateMachine.add('NavToBinState', ps.navigateToBinClass(), transitions={'ReachedBin': 'GetObjectState'})
 
     sis = smach_ros.IntrospectionServer('my_smach_introspection_server', sm, '/SM_ROOT')
     sis.start()

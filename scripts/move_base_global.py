@@ -8,7 +8,7 @@ import actionlib
 # Brings in the .action file and messages used by the move base action
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
-def movebase_client(x,y):
+def movebase_client(x,y,orientation):
 
    # Create an action client called "move_base" with action definition file "MoveBaseAction"
     client = actionlib.SimpleActionClient('move_base',MoveBaseAction)
@@ -25,7 +25,7 @@ def movebase_client(x,y):
    # Move 0.5 meters forward along the y axis of the "map" coordinate frame 
     goal.target_pose.pose.position.y = y#-0.00889953412116
     goal.target_pose.pose.position.z = 0#-0.00889953412116
-    goal.target_pose.pose.orientation.z=-1
+    goal.target_pose.pose.orientation.z=orientation
 
    # No rotation of the mobile base frame w.r.t. map frame
     goal.target_pose.pose.orientation.w = 1.0
@@ -43,11 +43,11 @@ def movebase_client(x,y):
         return client.get_result()   
 
 # If the python node is executed as main process (sourced directly)
-def runMoveBase(x,y):
+def runMoveBase(x,y,orientation):
     try:
        # Initializes a rospy node to let the SimpleActionClient publish and subscribe
         #rospy.init_node('movebase_client_py')
-        result = movebase_client(x,y)
+        result = movebase_client(x,y,orientation)
         if result:
             rospy.loginfo("Goal execution done!")
     except rospy.ROSInterruptException:

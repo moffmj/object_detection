@@ -39,6 +39,10 @@ class matt_test_class(smach.State):
         	self.pub3d = rospy.Publisher("point3D_from_main", Coordinates_3D, queue_size=10)
         	self.done_class_point = done()
 
+		#self.am_i_checking = False
+		self.matt_pub_done = rospy.Publisher("point_done", done, queue_size = 10)
+		#self.matt_pub_point3D = rospy.Publisher("point3D", Coordinates_3D, queue_size = 10)
+
 	def point_3d_client(self):
 		rospy.wait_for_service('desired_object')
 		#print("WAiting for 3d client service")
@@ -56,39 +60,82 @@ class matt_test_class(smach.State):
 
 
 	def done_callback_1(self, done):
-        	self.done_class_point.done = True
-        	print('received done point')
+		#self.done_class_point.done = False
+		#if self.am_i_checking:
+		self.done_class_point = done
+		
+		
+        	#self.done_class_point.done = True
+		#self.done_class_point = done()
+		
+        	print('received done callback saying:')
+		print(done.done)
 
 	def scan(self):
 		i= 0
-		while i<100:
+		#self.done_class_point.done = False
+		
+		#self.am_i_checking = True
+
+		# publish that no point has been found - this will be replaced by a new message if YOLO detects something
+		
+		#self.matt_pub_point3D.publish(self.done_class_point)
+		print("Waiting to settle")
+		rospy.sleep(2)
+		print("Publishing no point found and waiting")
+		self.done_class_point.done = False
+		self.matt_pub_done.publish(self.done_class_point)
+		rospy.sleep(2)
+		print('Starting Scan')
+		while i<2000:
 			self.point_3d_client()
-			print('Checking')
+			
 			if self.done_class_point.done:
 				print("Found class")
                 		self.done_class_point.done = False
+				#self.am_i_checking = False
                 		return True
+				break
                 	i += 1
-                return False
+		else:
+			#self.am_i_checking = False
+                	return False
 		
 
 	def execute(self,userdata):
+	
+		self.play_m_as = SimpleActionClient('/play_motion', PlayMotionAction)
+		if not self.play_m_as.wait_for_server(rospy.Duration(20)):
+			rospy.logerr("Could not connect to /play_motion AS")
+			exit()
+		rospy.loginfo("Connected!")
+
+		pmg = PlayMotionGoal()
+               	pmg.motion_name = 'home'#'pick_final_pose'
+		pmg.skip_planning = False
+		self.play_m_as.send_goal_and_wait(pmg)
 
 		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         	roslaunch.configure_logging(uuid)
         	self.launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/tiago_public_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch"])
 		print("EXECUTING")
 		
-		points = [[7,0],[2,0]]
+		points = [[-0.5,-0.5,1],[-0.5,-0.5,0],[-0.5,6,0],[-0.5,6,-1],[6.5,7,-1]]
 		index = 0
 		while True:
-			if self.scan():
+			print("Calling scan function")
+			result = self.scan()
+			if result:
+				print("Scan found an object")
 				break
 			else:
+				print("Scan couldn't find anything")
 				if index > len(points)-1:
 					index = 0
 				locations = points[index]
-				move_base_global.runMoveBase(locations[0],locations[1])
+				print("MOVING TO OBSERVATION POINT")
+				print(locations)
+				move_base_global.runMoveBase(locations[0],locations[1],locations[2])
 				index += 1
 					
 	
@@ -178,7 +225,7 @@ class navigateToBinClass(smach.State):
 	def execute(self, userdata):
 
 		# TODO - ENTER COORDINATES OF BIN AND RELEASE OBJECT
-		move_base_global.runMoveBase(7,0)
+		move_base_global.runMoveBase(7,0,-1)
 
 		self.play_m_as = SimpleActionClient('/play_motion', PlayMotionAction)
 		if not self.play_m_as.wait_for_server(rospy.Duration(20)):

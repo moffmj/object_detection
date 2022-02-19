@@ -289,16 +289,26 @@ bool From2Dto3D::processObject(std_srvs::EmptyRequest &req, std_srvs::EmptyRespo
             }
         }
     }
+    
     if (!xn && !yn && !zn)
     {
         // && base_point.point.x < 1.3 && base_point.point.x>0.5 && base_point.point.y < 0.5 && base_point.point.z < 1.3
         pub1.publish(base_point_);
         pub2.publish(msg_done);
         box_number = 0;
+	//msg_done.done = 0;
+   	//pub2.publish(msg_done);
+
     }
     else
     {
         //ROS_ERROR("the point is missing!");
+	//if (msg_done.done == 1) {
+	//	msg_done.done = 0;
+   	//	pub2.publish(msg_done);
+	//};
+	
+	
     }
     depth = 1000;
     return true;
