@@ -86,7 +86,7 @@ class matt_test_class(smach.State):
 		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         	roslaunch.configure_logging(uuid)
 
-        	self.yolo_launch = roslaunch.parent.ROSLaunchParent(uuid, ['/home/matt/tiago_public_ws/src/object_detection/launch/yolo.launch'])
+        	self.yolo_launch = roslaunch.parent.ROSLaunchParent(uuid, ['../../object_detection/launch/yolo.launch'])
 
 		self.yolo_launch.start()
 
@@ -224,7 +224,7 @@ class pickClass(smach.State):
 		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         	roslaunch.configure_logging(uuid)
 
-        	self.launch2 = roslaunch.parent.ROSLaunchParent(uuid, ['/home/matt/tiago_public_ws/src/matt_test_package/launch/pick_demo.launch'])
+        	self.launch2 = roslaunch.parent.ROSLaunchParent(uuid, ['../../matt_test_package/launch/pick_demo.launch'])
 
 		self.launch2.start()
 		print("Starting pick client")
