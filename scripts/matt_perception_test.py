@@ -81,6 +81,16 @@ class matt_test_class(smach.State):
 		
 		#self.matt_pub_point3D.publish(self.done_class_point)
 		print("Waiting to settle")
+
+		###
+		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        	roslaunch.configure_logging(uuid)
+
+        	self.yolo_launch = roslaunch.parent.ROSLaunchParent(uuid, ['/home/matt/tiago_public_ws/src/object_detection/launch/yolo.launch'])
+
+		self.yolo_launch.start()
+
+
 		rospy.sleep(2)
 		print("Publishing no point found and waiting")
 		self.done_class_point.done = False
@@ -94,11 +104,13 @@ class matt_test_class(smach.State):
 				print("Found class")
                 		self.done_class_point.done = False
 				#self.am_i_checking = False
+				self.yolo_launch.shutdown()
                 		return True
 				break
                 	i += 1
 		else:
 			#self.am_i_checking = False
+			self.yolo_launch.shutdown()
                 	return False
 		
 
@@ -115,9 +127,10 @@ class matt_test_class(smach.State):
 		pmg.skip_planning = False
 		self.play_m_as.send_goal_and_wait(pmg)
 
-		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-        	roslaunch.configure_logging(uuid)
-        	self.launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/tiago_public_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch"])
+		#uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        	#roslaunch.configure_logging(uuid)
+        	#self.launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/matt/tiago_public_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch"])
+		#self.launch.start()
 		print("EXECUTING")
 		
 		points = [[-0.5,-0.5,1],[-0.5,-0.5,0],[-0.5,6,0],[-0.5,6,-1],[6.5,7,-1]]
@@ -140,7 +153,7 @@ class matt_test_class(smach.State):
 					
 	
   
-        	self.launch.shutdown()
+        	#self.launch.shutdown()
 
         	#self.saysomething_client("i got the 3-D point of the object, starting grasping")
 		print("GOTIT")
@@ -206,13 +219,26 @@ class pickClass(smach.State):
             		print "Service call failed: %s" % e
 
 	def execute(self, userdata):
+
+		print("Launching pick up")
+		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        	roslaunch.configure_logging(uuid)
+
+        	self.launch2 = roslaunch.parent.ROSLaunchParent(uuid, ['/home/matt/tiago_public_ws/src/matt_test_package/launch/pick_demo.launch'])
+
+		self.launch2.start()
 		print("Starting pick client")
 		result = self.pick_client()
+
+
+
 		if result.success == True:
 			print("SUCCEEDED PICK")
+			self.launch2.shutdown()
 			return 'Picked'
 		else:
 			print("RETRY")
+			self.launch2.shutdown()
 			return 'Failed'
         	
 
