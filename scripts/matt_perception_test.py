@@ -21,16 +21,19 @@ from play_motion_msgs.msg import PlayMotionAction, PlayMotionGoal
 from actionlib import SimpleActionClient
 from multiprocessing import Process
 import sys
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
 print("Hello World!")
+
+
 
 
 class matt_test_class(smach.State):
 	def __init__(self):
         	print("This is the constructor method.")
 	
-		smach.State.__init__(self, outcomes=['FoundObjectTransition'], output_keys=['xco_out','yco_out'])
+		smach.State.__init__(self, outcomes=['FoundObjectTransition'],input_keys=['last_index'], output_keys=['xco_out','yco_out','last_index'])
 
 		self.done_message = False
         	rospy.Subscriber("point3D", Coordinates_3D, self.callback)
@@ -42,6 +45,21 @@ class matt_test_class(smach.State):
 		#self.am_i_checking = False
 		self.matt_pub_done = rospy.Publisher("point_done", done, queue_size = 10)
 		#self.matt_pub_point3D = rospy.Publisher("point3D", Coordinates_3D, queue_size = 10)
+		self.head_cmd = rospy.Publisher(
+			'/head_controller/command', JointTrajectory, queue_size=1)
+	
+	def raise_head(self):
+		rospy.loginfo("Moving head up")
+		jt = JointTrajectory()
+		jt.joint_names = ['head_1_joint', 'head_2_joint']
+		jtp = JointTrajectoryPoint()
+		jtp.positions = [0.0, 0.0]
+		jtp.time_from_start = rospy.Duration(2.0)
+		jt.points.append(jtp)
+		self.head_cmd.publish(jt)
+                rospy.loginfo("Done.")
+
+
 
 	def point_3d_client(self):
 		rospy.wait_for_service('desired_object')
@@ -86,7 +104,7 @@ class matt_test_class(smach.State):
 		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         	roslaunch.configure_logging(uuid)
 
-        	self.yolo_launch = roslaunch.parent.ROSLaunchParent(uuid, ['../../object_detection/launch/yolo.launch'])
+        	self.yolo_launch = roslaunch.parent.ROSLaunchParent(uuid, ['/home/zxy/tiago_public_ws/src/object_detection/launch/yolo.launch'])
 
 		self.yolo_launch.start()
 
@@ -97,7 +115,7 @@ class matt_test_class(smach.State):
 		self.matt_pub_done.publish(self.done_class_point)
 		rospy.sleep(2)
 		print('Starting Scan')
-		while i<2000:
+		while i<1000:
 			self.point_3d_client()
 			
 			if self.done_class_point.done:
@@ -127,14 +145,20 @@ class matt_test_class(smach.State):
 		pmg.skip_planning = False
 		self.play_m_as.send_goal_and_wait(pmg)
 
+		self.raise_head()
+
 		#uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         	#roslaunch.configure_logging(uuid)
         	#self.launch = roslaunch.parent.ROSLaunchParent(uuid, ["/home/matt/tiago_public_ws/src/darknet_ros/darknet_ros/launch/darknet_ros.launch"])
 		#self.launch.start()
 		print("EXECUTING")
 		
-		points = [[-0.5,-0.5,1],[-0.5,-0.5,0],[-0.5,6,0],[-0.5,6,-1],[6.5,7,-1]]
-		index = 0
+		points = [[3,4,0,1],[3,4,0.38,0.92],[3,4,0.71,0.71],[3,4,0.92,0.38],[3,4,1,0],[3,4,0.92,-0.38],[3,4,0.71,-0.71],[3,4,0.38,-0.92],[-0.5,-0.5,0,1],[-0.5,-0.5,0.38,0.92],[-0.5,-0.5,0.71,0.71],[-0.5,3,0.71,-0.71],[-0.5,3,0,1],[-0.5,3,0.71,0.71],[-0.5,6,0,1]]
+
+		try:
+			index = userdata.last_index	
+		except:
+			index = 0
 		while True:
 			print("Calling scan function")
 			result = self.scan()
@@ -148,9 +172,10 @@ class matt_test_class(smach.State):
 				locations = points[index]
 				print("MOVING TO OBSERVATION POINT")
 				print(locations)
-				move_base_global.runMoveBase(locations[0],locations[1],locations[2])
+				move_base_global.runMoveBase(locations[0],locations[1],locations[2],locations[3])
+				
+				userdata.last_index = index
 				index += 1
-					
 	
   
         	#self.launch.shutdown()
@@ -172,7 +197,7 @@ class matt_test_class(smach.State):
 class navClass(smach.State):
 	def __init__(self):
 		print("second class")
-		smach.State.__init__(self, outcomes=['Navigated'], input_keys=['xco_in','yco_in'])
+		smach.State.__init__(self, outcomes=['Navigated'], input_keys=['xco_in','yco_in','last_index'], output_keys=['last_index'])
 		#odom_sub = rospy.Subscriber('/mobile_base_controller/odom', Odometry, self.callback)
 		#self.robot_x = 0
 		#self.robot_y = 0
@@ -203,7 +228,7 @@ class navClass(smach.State):
 
 class pickClass(smach.State):
 	def __init__(self):
-		smach.State.__init__(self, outcomes=['Picked','Failed'])
+		smach.State.__init__(self, outcomes=['Picked','Failed'], input_keys=['last_index'], output_keys=['last_index'])
 
 	def pick_client(self):
 		rospy.wait_for_service('pick_gui')
@@ -224,7 +249,7 @@ class pickClass(smach.State):
 		uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         	roslaunch.configure_logging(uuid)
 
-        	self.launch2 = roslaunch.parent.ROSLaunchParent(uuid, ['../../matt_test_package/launch/pick_demo.launch'])
+        	self.launch2 = roslaunch.parent.ROSLaunchParent(uuid, ['/home/zxy/tiago_public_ws/src/matt_test_package/launch/pick_demo.launch'])
 
 		self.launch2.start()
 		print("Starting pick client")
@@ -246,12 +271,12 @@ class pickClass(smach.State):
 
 class navigateToBinClass(smach.State):
 	def __init__(self):
-		smach.State.__init__(self, outcomes=['ReachedBin'])
+		smach.State.__init__(self, outcomes=['ReachedBin'],input_keys=['last_index'], output_keys=['last_index'])
 
 	def execute(self, userdata):
 
 		# TODO - ENTER COORDINATES OF BIN AND RELEASE OBJECT
-		move_base_global.runMoveBase(7,0,-1)
+		move_base_global.runMoveBase(7,0,-1,1)
 
 		self.play_m_as = SimpleActionClient('/play_motion', PlayMotionAction)
 		if not self.play_m_as.wait_for_server(rospy.Duration(20)):
